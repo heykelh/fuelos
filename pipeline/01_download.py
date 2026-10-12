@@ -2,33 +2,55 @@
 
 Usage :
     python pipeline/01_download.py --list
-    python pipeline/01_download.py --only flightlist fuel apt
-    python pipeline/01_download.py --extract
+    python pipeline/01_download.py --only .parquet readme
+    python pipeline/01_download.py --only flights_train --extract
 """
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import sys
 import tarfile
+import time
 import zipfile
 from pathlib import Path
 
 import requests
+from requests.adapters import HTTPAdapter
 from tqdm import tqdm
+from urllib3.util.retry import Retry
 
 from config import BRONZE_PRC_DIR, ZENODO_RECORD_ID, ensure_dirs
 
 API_URL = f"https://zenodo.org/api/records/{ZENODO_RECORD_ID}"
+MANIFEST_PATH = BRONZE_PRC_DIR / "_zenodo_manifest.json"
 CHUNK_SIZE = 1024 * 1024
+DOWNLOAD_ATTEMPTS = 5
+TIMEOUT = (15, 120)
 
 
-def fetch_files() -> list[dict]:
-    """Récupère la liste des fichiers publiés sur l'enregistrement Zenodo."""
-    response = requests.get(API_URL, timeout=60)
-    response.raise_for_status()
-    record = response.json()
+class IntegrityError(Exception):
+    """Fichier téléchargé dont la taille ou l'empreinte MD5 ne correspond pas."""
+
+
+def build_session() -> requests.Session:
+    """Session HTTP avec nouvelles tentatives automatiques sur les erreurs serveur."""
+    retry = Retry(
+        total=6,
+        backoff_factor=2,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=("GET",),
+        respect_retry_after_header=True,
+    )
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    session.headers["User-Agent"] = "fuelos/0.1 (github.com/heykelh/fuelos)"
+    return session
+
+
+def parse_files(record: dict) -> list[dict]:
     files = []
     for item in record.get("files", []):
         checksum = item.get("checksum", "")
@@ -41,6 +63,23 @@ def fetch_files() -> list[dict]:
             }
         )
     return files
+
+
+def fetch_files(session: requests.Session) -> list[dict]:
+    """Liste des fichiers Zenodo, avec repli sur le manifeste local si l'API est indisponible."""
+    try:
+        response = session.get(API_URL, timeout=TIMEOUT)
+        response.raise_for_status()
+        files = parse_files(response.json())
+        MANIFEST_PATH.write_text(json.dumps(files, indent=2), encoding="utf-8")
+        return files
+    except requests.RequestException as exc:
+        if MANIFEST_PATH.exists():
+            print(f"API Zenodo indisponible ({exc.__class__.__name__}), manifeste local utilisé.")
+            return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        raise SystemExit(
+            "API Zenodo indisponible et aucun manifeste local. Réessaie dans quelques minutes."
+        ) from exc
 
 
 def human_size(size: int) -> str:
@@ -66,21 +105,14 @@ def is_valid(path: Path, file: dict) -> bool:
     return file["md5"] is None or md5sum(path) == file["md5"]
 
 
-def download(file: dict, dest_dir: Path) -> Path:
-    """Télécharge un fichier avec reprise possible et contrôle d'intégrité."""
-    target = dest_dir / file["name"]
-    if is_valid(target, file):
-        print(f"Déjà présent et vérifié : {target.name}")
-        return target
-
+def download_once(session: requests.Session, file: dict, target: Path) -> None:
+    """Une tentative de téléchargement, avec reprise à partir du fichier partiel."""
     part = target.with_name(target.name + ".part")
     start = part.stat().st_size if part.exists() else 0
     headers = {"Range": f"bytes={start}-"} if start else {}
 
-    with requests.get(file["url"], headers=headers, stream=True, timeout=120) as response:
-        if response.status_code == 416:
-            start = file["size"]
-        else:
+    with session.get(file["url"], headers=headers, stream=True, timeout=TIMEOUT) as response:
+        if response.status_code != 416:
             response.raise_for_status()
             if start and response.status_code != 206:
                 start = 0
@@ -102,8 +134,29 @@ def download(file: dict, dest_dir: Path) -> Path:
     part.replace(target)
     if not is_valid(target, file):
         target.unlink(missing_ok=True)
-        raise RuntimeError(f"Contrôle d'intégrité échoué pour {file['name']}, relance le script.")
-    print(f"Téléchargé et vérifié : {target.name}")
+        raise IntegrityError(f"Contrôle d'intégrité échoué pour {file['name']}")
+
+
+def download(session: requests.Session, file: dict, dest_dir: Path) -> Path:
+    """Télécharge un fichier avec plusieurs tentatives et contrôle d'intégrité."""
+    target = dest_dir / file["name"]
+    if is_valid(target, file):
+        print(f"Déjà présent et vérifié : {target.name}")
+        return target
+
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            download_once(session, file, target)
+            print(f"Téléchargé et vérifié : {target.name}")
+            return target
+        except (requests.RequestException, IntegrityError) as exc:
+            if attempt == DOWNLOAD_ATTEMPTS:
+                raise SystemExit(
+                    f"Échec définitif pour {file['name']} après {attempt} tentatives : {exc}"
+                ) from exc
+            wait = 15 * attempt
+            print(f"Tentative {attempt} échouée ({exc.__class__.__name__}), reprise dans {wait} s")
+            time.sleep(wait)
     return target
 
 
@@ -132,7 +185,8 @@ def main() -> int:
     args = parser.parse_args()
 
     ensure_dirs()
-    files = fetch_files()
+    session = build_session()
+    files = fetch_files(session)
     if not files:
         print("Aucun fichier trouvé sur l'enregistrement Zenodo.")
         return 1
@@ -149,7 +203,7 @@ def main() -> int:
         return 0
 
     for f in files:
-        path = download(f, BRONZE_PRC_DIR)
+        path = download(session, f, BRONZE_PRC_DIR)
         if args.extract:
             extract(path, BRONZE_PRC_DIR)
     return 0
