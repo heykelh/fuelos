@@ -1,0 +1,13 @@
+duckdb>=1.1
+pandas>=2.2
+pyarrow>=17.0
+numpy>=2.0
+requests>=2.32
+tqdm>=4.66
+openap>=2.0
+scipy>=1.14
+statsmodels>=0.14
+scikit-learn>=1.5
+pandera>=0.20
+matplotlib>=3.9
+jupyterlab>=4.2

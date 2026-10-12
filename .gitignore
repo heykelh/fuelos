@@ -1,0 +1,25 @@
+# Données : jamais versionnées (plusieurs Go)
+data/
+*.duckdb
+*.duckdb.wal
+*.part
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Node / Next.js (pour plus tard)
+node_modules/
+.next/
+out/
+
+# Environnement et OS
+.env
+.env.local
+.DS_Store
+Thumbs.db
+.vscode/

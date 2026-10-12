@@ -1,0 +1,4 @@
+# Installé en P2 seulement (modèles avancés), pour garder l'installation P0 légère
+-r requirements.txt
+torch>=2.4
+shap>=0.46
