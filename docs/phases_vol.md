@@ -1,55 +1,80 @@
 # Phases de vol et débits carburant (couche Silver)
 
-Phase déduite de la trajectoire de chaque intervalle carburant. Règles : vitesse sol moyenne inférieure à 40 kt : sol ; variation d'altitude supérieure à 300 ft/min : montée ou descente ; sinon altitude moyenne supérieure ou égale à 20000 ft : croisière, inférieure : palier bas. Intervalle couvert à moins de 50% par la trajectoire : phase indéterminée.
+Phase déduite de la trajectoire de chaque intervalle carburant : vitesse sol moyenne inférieure à 40 kt : sol ; variation d'altitude supérieure à 300 ft/min : montée ou descente ; sinon altitude moyenne d'au moins 20000 ft : croisière, en dessous : palier bas. Intervalle couvert à moins de 50% par la trajectoire : indéterminé.
 
-## Répartition des intervalles par phase
+Les débits sont calculés par vol et par phase, car le carburant est relevé par paliers (souvent 100 kg ou 20 lb) : sur un intervalle de 5 minutes, ce pas domine la mesure.
 
-| Catégorie | Phase | Intervalles | Part | Débits atypiques |
-|---|---|---:|---:|---:|
-| Court et moyen-courrier | Indéterminée | 56 966 | 43,0 % | 814 |
-| Court et moyen-courrier | Croisière | 48 904 | 36,9 % | 8 461 |
-| Court et moyen-courrier | Descente | 14 403 | 10,9 % | 36 |
-| Court et moyen-courrier | Montée | 10 337 | 7,8 % | 41 |
-| Court et moyen-courrier | Palier bas | 1 784 | 1,3 % | 1 |
-| Long-courrier | Indéterminée | 48 668 | 80,0 % | 2 568 |
-| Long-courrier | Croisière | 9 583 | 15,8 % | 344 |
-| Long-courrier | Descente | 1 481 | 2,4 % | 1 |
-| Long-courrier | Montée | 937 | 1,5 % | 10 |
-| Long-courrier | Palier bas | 155 | 0,3 % | 19 |
-| Long-courrier | Sol | 3 | 0,0 % | 0 |
+## Répartition des intervalles par phase (vols avec trajectoire)
 
-## Débit carburant médian par type et par phase (kg/h)
+| Catégorie | Phase | Intervalles | Part |
+|---|---|---:|---:|
+| Court et moyen-courrier | Croisière | 48 966 | 56,6 % |
+| Court et moyen-courrier | Descente | 14 412 | 16,6 % |
+| Court et moyen-courrier | Indéterminée | 11 071 | 12,8 % |
+| Court et moyen-courrier | Montée | 10 342 | 11,9 % |
+| Court et moyen-courrier | Palier bas | 1 788 | 2,1 % |
+| Long-courrier | Indéterminée | 32 681 | 72,8 % |
+| Long-courrier | Croisière | 9 642 | 21,5 % |
+| Long-courrier | Descente | 1 488 | 3,3 % |
+| Long-courrier | Montée | 939 | 2,1 % |
+| Long-courrier | Palier bas | 152 | 0,3 % |
+| Long-courrier | Sol | 3 | 0,0 % |
 
-Format : médiane (effectif). Cellules de moins de 30 intervalles non affichées. Débits atypiques exclus.
+Intervalles sans trajectoire téléchargée :
 
-| Type | Montée | Croisière | Descente | Palier bas | Sol |
-|---|---:|---:|---:|---:|---:|
-| A20N | 2 029 (4 762) | 1 085 (21 684) | 691 (6 650) | 1 403 (749) | n.d. |
-| A320 | 4 526 (4 501) | 2 399 (10 022) | 1 271 (5 758) | 3 630 (656) | n.d. |
-| A359 | 10 570 (189) | 5 509 (4 881) | 2 858 (352) | n.d. | n.d. |
-| B738 | 5 037 (480) | 2 400 (5 240) | 1 435 (879) | 2 717 (279) | n.d. |
-| B788 | n.d. | 4 763 (81) | n.d. | n.d. | n.d. |
-| A332 | 9 109 (467) | 5 523 (1 863) | 2 829 (476) | 6 020 (45) | n.d. |
-| B789 | n.d. | 5 995 (681) | 2 988 (126) | n.d. | n.d. |
-| A21N | 2 718 (259) | 2 398 (1 531) | 1 200 (501) | n.d. | n.d. |
-| A321 | 4 550 (231) | 2 521 (1 410) | 1 632 (437) | 2 133 (52) | n.d. |
-| B77W | n.d. | 7 649 (379) | 4 401 (76) | n.d. | n.d. |
-| A333 | 8 405 (126) | 5 409 (621) | 3 591 (236) | 5 994 (35) | n.d. |
-| B744 | 16 169 (53) | 9 599 (294) | 5 960 (76) | n.d. | n.d. |
+- final : 37 454
+- rank : 24 283
 
-## Croisière : dispersion du débit par type
+## Test d'unité kg / livre (règle R7)
 
-| Type | Intervalles | P10 | Médiane | P90 | Mach médian | Altitude médiane (ft) |
-|---|---:|---:|---:|---:|---:|---:|
-| A20N | 21 684 | 544 | 1 085 | 2 028 | 0,78 | 37 003 |
-| A320 | 10 022 | 2 391 | 2 399 | 2 406 | 0,78 | 36 995 |
-| B738 | 5 240 | 1 956 | 2 400 | 3 045 | 0,79 | 37 000 |
-| A359 | 4 881 | 4 797 | 5 509 | 6 995 | 0,10 | 38 000 |
-| A332 | 1 863 | 3 701 | 5 523 | 7 993 | 0,81 | 37 996 |
-| A21N | 1 531 | 1 960 | 2 398 | 2 728 | 0,77 | 34 997 |
-| A321 | 1 410 | 1 963 | 2 521 | 3 262 | 0,78 | 35 024 |
-| B789 | 681 | 4 493 | 5 995 | 8 437 | 0,85 | 37 000 |
-| A333 | 621 | 3 599 | 5 409 | 7 962 | 0,81 | 37 000 |
-| B772 | 409 | 5 932 | 6 674 | 9 195 | 0,83 | 37 591 |
-| B77W | 379 | 6 398 | 7 649 | 10 490 | 0,83 | 34 000 |
-| B744 | 294 | 8 398 | 9 599 | 11 236 | 0,84 | 36 000 |
+Vols « motif livre » : au moins la moitié des valeurs sont des multiples exacts de 20 lb. Débit de croisière calculé par vol. Rapport attendu en cas de confusion d'unité : 0,4536.
+
+| Type | Vols motif livre | Autres vols | Croisière motif livre (kg/h) | Croisière autres (kg/h) | Rapport | Verdict |
+|---|---:|---:|---:|---:|---:|---|
+| A20N | 1 152 | 922 | 934 | 1 138 | 0,82 | À examiner |
+| A320 | 321 | 1 497 | 2 426 | 2 339 | 1,04 | Pas d'écart |
+| A359 | 179 | 383 | 5 560 | 5 532 | 1,00 | Pas d'écart |
+| B738 | 311 | 134 | 2 466 | 2 400 | 1,03 | Pas d'écart |
+| A21N | 87 | 97 | 1 714 | 2 295 | 0,75 | À examiner |
+| A332 | 34 | 140 | 5 150 | 5 461 | 0,94 | Pas d'écart |
+| A321 | 22 | 106 | 2 608 | 2 492 | 1,05 | Pas d'écart |
+| B789 | 0 | 84 | n.d. | 5 614 | n.d. | Échantillon insuffisant |
+| B77W | 0 | 75 | n.d. | 7 911 | n.d. | Échantillon insuffisant |
+| A333 | 5 | 69 | 3 464 | 5 400 | 0,64 | Échantillon insuffisant |
+| B772 | 1 | 71 | 5 638 | 6 699 | 0,84 | Échantillon insuffisant |
+| B744 | 0 | 48 | n.d. | 9 599 | n.d. | Échantillon insuffisant |
+
+Vols corrigés (valeur brute conservée dans fuel_kg, valeur corrigée dans fuel_kg_corr) :
+
+| Type | Vols corrigés | Vols du type | Part |
+|---|---:|---:|---:|
+
+## Effet de la correction sur la croisière
+
+| Type | Vols | Médiane brute (kg/h) | Médiane corrigée (kg/h) |
+|---|---:|---:|---:|
+| A20N | 2 518 | 994 | 994 |
+| A21N | 322 | 2 265 | 2 265 |
+| A320 | 2 422 | 2 374 | 2 374 |
+| A321 | 191 | 2 547 | 2 547 |
+
+Après correction, la croisière médiane de l'A20N est inférieure de 58,1 % à celle de l'A320.
+
+## Débit médian par vol et par phase (kg/h, après correction)
+
+Format : médiane (nombre de vols). Phases d'au moins 15 min par vol. Cellules de moins de 20 vols non affichées. Valeurs atypiques exclues.
+
+| Type | Montée | Croisière | Descente |
+|---|---:|---:|---:|
+| A320 | 4 392 (1 055) | 2 388 (2 390) | 1 599 (1 259) |
+| A20N | 1 952 (927) | 978 (2 332) | 773 (1 320) |
+| A359 | 10 488 (62) | 5 580 (743) | 2 988 (153) |
+| B738 | 5 490 (123) | 2 451 (464) | 1 359 (219) |
+| A21N | 2 313 (72) | 2 359 (250) | 1 385 (109) |
+| A332 | 9 119 (70) | 5 338 (221) | 2 998 (85) |
+| A321 | 4 975 (67) | 2 567 (179) | 1 741 (119) |
+| B789 | n.d. | 5 666 (114) | 2 592 (38) |
+| A333 | n.d. | 5 396 (91) | 3 536 (34) |
+| B77W | n.d. | 7 973 (91) | 3 600 (34) |
+| B772 | n.d. | 6 709 (77) | 3 127 (44) |
+| B744 | n.d. | 9 718 (58) | n.d. |
