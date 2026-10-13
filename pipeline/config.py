@@ -31,6 +31,13 @@ CO2_PER_KG_FUEL = 3.16
 # Aéroports du hub parisien
 PARIS_AIRPORTS = ("LFPG", "LFPO")
 
+# Gros porteurs (codes type OACI), utilisés pour séparer long-courrier et court-moyen-courrier
+WIDEBODY_TYPES = (
+    "A332", "A333", "A338", "A339", "A343", "A346", "A359", "A35K", "A388",
+    "B744", "B748", "B762", "B763", "B764", "B772", "B773", "B77L", "B77W",
+    "B788", "B789", "B78X",
+)
+
 
 def ensure_dirs() -> None:
     """Crée l'arborescence de données si elle n'existe pas."""
